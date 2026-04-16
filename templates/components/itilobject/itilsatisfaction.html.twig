@@ -33,7 +33,6 @@
 {% import "components/alerts_macros.html.twig" as alerts %}
 {% import "components/form/fields_macros.html.twig" as fields %}
 
-{{ call_plugin_hook(constant('Glpi\\Plugin\\Hooks::PRE_ITEM_FORM'), {"item": item, 'options': params}) }}
 {% block more_fields %}
     {% if url is defined %}
         {{ fields.htmlField(
@@ -44,6 +43,9 @@
                 full_width: true
             }
         ) }}
+        {# Close the wrapper div and form opened in timeline.html.twig (no buttons rendered for external surveys) #}
+        </div>
+        </form>
 
     {% else %}
         {% if expired %}
@@ -61,6 +63,9 @@
                     full_width: true
                 }
             ) }}
+            {# Close the wrapper div and form opened in timeline.html.twig (no buttons rendered when expired with no answer) #}
+            </div>
+            </form>
         {% else %}
             {{ fields.hiddenField(
                 parent_item.getForeignKeyField(),
@@ -129,7 +134,12 @@
             </script>
 
             {% if not expired %}
+                {# buttons.html.twig closes the wrapper div and form opened in timeline.html.twig #}
                 {{ include('components/form/buttons.html.twig') }}
+            {% else %}
+                {# Close the wrapper div and form opened in timeline.html.twig (survey answered but now expired) #}
+                </div>
+                </form>
             {% endif %}
         {% endif %}
     {% endif %}
