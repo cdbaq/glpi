@@ -228,14 +228,14 @@
         {{ include('components/itilobject/answer.html.twig') }}
     {% endif %}
 
-   {% if survey is defined and survey %}
-      <form
-         data-testid="survey"
-         class="mt-5 w-100 hide-form-button-separator"
-         method="POST"
-         action="{{ "TicketSatisfaction"|itemtype_form_path }}"
-      >
-         <div>
+    {% if survey is defined and survey %}
+    <form
+        data-testid="survey"
+        class="mt-5 w-100 hide-form-button-separator"
+        method="POST"
+        action="{{ get_class(survey)|itemtype_form_path }}"
+    >
+        <div>
             {{ survey.showSatisactionForm(item, false) }}
       {# itilsatisfaction.html.twig closes the wrapper div and form above,
          either via buttons.html.twig (non-expired) or with explicit closing tags (expired/external cases) #}

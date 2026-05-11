@@ -797,14 +797,6 @@ class Ticket extends CommonITILObject implements DefaultSearchRequestInterface
         if ($item instanceof self) {
             $ong    = [];
 
-            // enquete si statut clos
-            $satisfaction = new TicketSatisfaction();
-            if (
-                $satisfaction->getFromDB($item->getID())
-                && $item->fields['status'] == self::CLOSED
-            ) {
-                $ong[3] = TicketSatisfaction::createTabEntry(__('Satisfaction'), 0, static::getType());
-            }
             if ($item->canView()) {
                 $ong[4] = static::createTabEntry(__('Statistics'), 0, null, 'ti ti-chart-pie');
             }
@@ -821,10 +813,6 @@ class Ticket extends CommonITILObject implements DefaultSearchRequestInterface
         switch (get_class($item)) {
             case self::class:
                 switch ($tabnum) {
-                    case 3:
-                        self::showSatisfactionTabContent($item);
-                        break;
-
                     case 4:
                         $item->showStats();
                         break;
@@ -1299,7 +1287,12 @@ class Ticket extends CommonITILObject implements DefaultSearchRequestInterface
         $slalevels_id = SlaLevel::getFirstSlaLevel($slas_id);
 
         $sla = new SLA();
-        if ($sla->getFromDB($slas_id)) {
+        $in_db = $sla->getFromDB($slas_id);
+        if (!$in_db) {
+            return;
+        }
+
+        if (!in_array($this->fields['status'], static::getReopenableStatusArray())) {
             $sla->clearInvalidLevels($this->fields['id']);
             $calendars_id = Entity::getUsedConfig(
                 'calendars_strategy',
@@ -1329,7 +1322,12 @@ class Ticket extends CommonITILObject implements DefaultSearchRequestInterface
         $olalevels_id = OlaLevel::getFirstOlaLevel($slas_id);
 
         $ola = new OLA();
-        if ($ola->getFromDB($slas_id)) {
+        $in_db = $ola->getFromDB($slas_id);
+        if (!$in_db) {
+            return;
+        }
+
+        if (!in_array($this->fields['status'], static::getReopenableStatusArray())) {
             $ola->clearInvalidLevels($this->fields['id']);
             $calendars_id = Entity::getUsedConfig(
                 'calendars_strategy',
@@ -3832,7 +3830,7 @@ JAVASCRIPT;
                 'show_tickets_properties_on_helpdesk',
                 Session::getActiveEntity(),
             ),
-            'survey'                    => $this->getSatisfactionSurveyForHelpdesk(),
+            'survey'                    => $this->getSatisfactionSurvey(),
         ]);
 
         return true;
@@ -4319,7 +4317,7 @@ JAVASCRIPT;
                         $options['criteria'][3]['searchtype'] = 'equals';
                         $options['criteria'][3]['value']      = CommonITILValidation::WAITING;
                         $options['criteria'][3]['link']       = 'AND';
-                        $forcetab                         = 'TicketValidation$1';
+                        $forcetab                             = 'Ticket$main';
 
                         $main_header = "<a href=\"" . htmlescape(Ticket::getSearchURL() . "?" . Toolbox::append_params($options)) . "\">"
                             . Html::makeTitle(__('Your tickets to approve'), $displayed_row_count, $total_row_count) . "</a>";
@@ -6401,23 +6399,4 @@ JAVASCRIPT;
         return $restrict;
     }
 
-    private function getSatisfactionSurveyForHelpdesk(): ?TicketSatisfaction
-    {
-        // On the "central" interface, the survey will be available in a
-        // dedicated tab
-        if (Session::getCurrentInterface() !== "helpdesk") {
-            return null;
-        }
-
-        // Try to find a satisfaction survey for this ticket
-        $satisfaction = static::getSatisfactionClassInstance();
-        if (!$satisfaction instanceof TicketSatisfaction) {
-            return null; // Can't happen
-        }
-        $survey_exist = $satisfaction->getFromDBByCrit([
-            self::getForeignKeyField() => $this->getID(),
-        ]);
-
-        return $survey_exist ? $satisfaction : null;
-    }
 }
