@@ -135,6 +135,7 @@
             </script>
 
             {% if not expired %}
+                {# buttons.html.twig closes the wrapper div and form opened in timeline.html.twig #}
                 {{ include('components/form/buttons.html.twig') }}
             {% else %}
                 {# Close the wrapper div and form opened in timeline.html.twig (survey answered but now expired) #}
